@@ -116,6 +116,8 @@ vms_data = XmlSimple.xml_in(rhevm["/api/vms"].get.body, { 'ForceArray' => false 
 # Iterate through the VM's and get all the 
 # required information
 vms_data['vm'].each do |vm|
+  # Making sure we only consider VM's that are in state up (so they do have a console to connect to)
+  # and that have the spice protocol enabled as the connection mode
   if vm['status']['state'] == "up" && vm['display']['type'] == "spice"
     @vms.push(VM.new(vm))
   end
