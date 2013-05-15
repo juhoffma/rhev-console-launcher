@@ -31,7 +31,6 @@ The script provides a self explanatory help message.
       -c, --cert PATH                  The Path to the Certificate File (defaults to "~/ca.crt")
       -u, --username USERNAME          The Username used to establish the connection to --host (defaults to admin@internal)
       -p, --password PASSWORD          The Password used to establish the connection to --host
-          --help
-                                       Display this Help Message
+          --help                       Display this Help Message
 ```
                                        
