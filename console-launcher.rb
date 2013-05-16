@@ -12,6 +12,8 @@ require 'xmlsimple'
 require 'pp'
 require 'clipboard'
 require 'optparse'
+require 'tempfile' # required to download the certificate files on they fly
+require 'net/http'
 
 options = {}
 
@@ -31,11 +33,6 @@ optparse = OptionParser.new do |opts|
   options[:host] = nil
   opts.on( '-h', '--host HOSTNAME', 'The Hostname of your RHEV-M Installation') do |host|
     options[:host] = host
-  end
-
-  options[:cert] = File.expand_path('~/ca.crt')
-  opts.on( '-c', '--cert PATH', 'The Path to the Certificate File (defaults to "~/ca.crt")') do |f|
-    options[:cert] = f
   end
 
   options[:user] = "admin@internal"
@@ -81,7 +78,6 @@ end
 @host = options[:host]
 @user = options[:user]
 @pass = options[:pass]
-@cert = options[:cert]
 
 @vms = Array.new
 
@@ -99,6 +95,22 @@ class VM
     @host_uuid = vm['host']['id'] unless vm['host'].nil?
   end
 end
+
+
+# download the certificate file on the fly
+cert = Tempfile.new(@host + ".crt")    
+Net::HTTP.start(@host) do |http|
+  begin
+    http.request_get('/ca.crt') do |resp|
+      resp.read_body do |segment|
+        cert.write(segment)
+      end
+    end
+  ensure
+    cert.close()
+  end
+end
+@cert = cert.path
 
 # Create a little helper object that we will use to 
 # make connections to the REST API
@@ -138,8 +150,6 @@ if index > @vms.size
 end
 
 vm = @vms[index-1]
-
-pp vm
 
 # let us no gather the host subject
 hosts_data = XmlSimple.xml_in(rhevm["/api/hosts/"+vm.host_uuid].get.body, { 'ForceArray' => false })
