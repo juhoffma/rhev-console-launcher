@@ -159,9 +159,32 @@ ticket_data = XmlSimple.xml_in(rhevm["/api/vms/" + vm.id + "/ticket"].post("<act
 password = ticket_data['ticket']['value']
 Clipboard.copy password
 
+# Creating the .vv File for the connection
+# download the certificate file on the fly
+vv = Tempfile.new("#{vm.name}.vv")    
+begin
+  vv.puts("[virt-viewer]")
+  vv.puts("type=spice")
+  vv.puts("host=#{vm.address}")
+  vv.puts("port=#{vm.port}")
+  vv.puts("password=#{password}")
+  vv.puts("tls-port=#{vm.secure_port}")
+  vv.puts("fullscreen=0")
+  vv.puts("title=vm:#{vm.name} - %d - Press SHIFT+F12 to Release Cursor")
+  vv.puts("enable-smartcard=0")
+  vv.puts("enable-usb-autoshare=1")
+  vv.puts("usb-filter=-1,-1,-1,-1,0")
+  vv.puts("host-subject=#{host_subject}")
+  vv.puts("toggle-fullscreen=shift+f11")
+  vv.puts("release-cursor=shift+f12")
+ensure 
+  vv.close()
+end
+
 # Now that we have all the information we can print the cmd line
 puts "VM: #{vm.name} state: #{vm.state} Password: #{password}"
-command = "/Applications/RemoteViewer.app/Contents/MacOS/RemoteViewer --spice-ca-file #{@cert} --spice-host-subject #{host_subject} spice://#{vm.address}/?port=#{vm.port}\\&tls-port=#{vm.secure_port}"
+# command = "/Applications/RemoteViewer.app/Contents/MacOS/RemoteViewer --spice-ca-file #{@cert} --spice-host-subject #{host_subject} spice://#{vm.address}/?port=#{vm.port}\\&tls-port=#{vm.secure_port}"
+command = "/Applications/RemoteViewer.app/Contents/MacOS/RemoteViewer --spice-ca-file #{@cert} #{vv.path}"
 puts command if options[:print]
 %x{#{command}} unless options[:dryrun]
 
