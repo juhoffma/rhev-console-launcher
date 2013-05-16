@@ -9,8 +9,6 @@
 require 'rubygems'
 require 'rest_client'
 require 'xmlsimple'
-require 'pp'
-require 'clipboard'
 require 'optparse'
 require 'tempfile' # required to download the certificate files on they fly
 require 'net/http'
@@ -157,7 +155,6 @@ host_subject = hosts_data['certificate']['subject']
 
 ticket_data = XmlSimple.xml_in(rhevm["/api/vms/" + vm.id + "/ticket"].post("<action><ticket><expiry>300</expiry></ticket></action>", :content_type => 'application/xml').body, { 'ForceArray' => false })
 password = ticket_data['ticket']['value']
-Clipboard.copy password
 
 # Creating the .vv File for the connection
 # download the certificate file on the fly
