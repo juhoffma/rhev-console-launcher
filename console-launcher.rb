@@ -26,6 +26,12 @@ require 'xmlsimple'
 require 'optparse'
 require 'tempfile' # required to download the certificate files on they fly
 require 'net/http'
+require 'highline/import' # Secure Password Prompting if a user does not provide it when the script is called
+
+# queries the User for a password
+def get_password(prompt="RHEV-M Password:")
+   ask(prompt) {|q| q.echo = "*"}
+end
 
 options = {}
 
@@ -87,9 +93,7 @@ if options[:host] == nil
   exit 1
 end
 
-@host = options[:host]
-@user = options[:user]
-@pass = options[:pass]
+options[:pass] = get_password if options[:pass] == nil
 
 @vms = Array.new
 
@@ -110,8 +114,8 @@ end
 
 
 # download the certificate file on the fly
-cert = Tempfile.new(@host + ".crt")    
-Net::HTTP.start(@host) do |http|
+cert = Tempfile.new(options[:host] + ".crt")    
+Net::HTTP.start(options[:host]) do |http|
   begin
     http.request_get('/ca.crt') do |resp|
       resp.read_body do |segment|
@@ -127,9 +131,9 @@ end
 # Create a little helper object that we will use to 
 # make connections to the REST API
 rhevm = RestClient::Resource.new(
-    "https://" + @host, 
-    :user => @user, 
-    :password => @pass,
+    "https://" + options[:host], 
+    :user => options[:user], 
+    :password => options[:pass],
     :ssl_ca_cert => @cert,
     :ssl_version => "SSLv3",
     :verify_ssl => OpenSSL::SSL::VERIFY_NONE)
@@ -194,7 +198,6 @@ end
 
 # Now that we have all the information we can print the cmd line
 puts "VM: #{vm.name} state: #{vm.state} Password: #{password}"
-# command = "/Applications/RemoteViewer.app/Contents/MacOS/RemoteViewer --spice-ca-file #{@cert} --spice-host-subject #{host_subject} spice://#{vm.address}/?port=#{vm.port}\\&tls-port=#{vm.secure_port}"
 command = "/Applications/RemoteViewer.app/Contents/MacOS/RemoteViewer --spice-ca-file #{@cert} #{vv.path}"
 puts command if options[:print]
 %x{#{command}} unless options[:dryrun]
