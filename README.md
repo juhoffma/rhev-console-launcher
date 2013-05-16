@@ -7,6 +7,7 @@ Next to the console-launcher.rb script, some gems are required. Please install t
   gem install rest-client
   gem install xml-simple
   gem install clipboard
+  gem install highline
 ```
 
 On MacOSX This script requires [RemoteViewer](http://people.freedesktop.org/~teuf/spice-gtk-osx/dmg/0.3.1/) to be installed.
