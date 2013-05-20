@@ -1,7 +1,7 @@
 # rhev-console-launcher
 
 ## Installation
-Next to the console-launcher.rb script, some gems are required. Please install them with the following commands.
+In addition to the console-launcher.rb script, a few gems are required. Please install them with the following commands.
 
 ```
   gem install rest-client
@@ -10,7 +10,7 @@ Next to the console-launcher.rb script, some gems are required. Please install t
   gem install highline
 ```
 
-On MacOSX This script requires [RemoteViewer](http://people.freedesktop.org/~teuf/spice-gtk-osx/dmg/0.3.1/) to be installed.
+On MacOSX This script requires [RemoteViewer](http://people.freedesktop.org/~teuf/spice-gtk-osx/dmg/0.3.1/) to be installed. This script looks for it in /Applications/RemoteViewer.app so make sure to install it to that same location.
 
 ## Running the script
 The script provides a self explanatory help message.

@@ -29,7 +29,7 @@ require 'net/http'
 require 'highline/import' # Secure Password Prompting if a user does not provide it when the script is called
 
 # queries the User for a password
-def get_password(prompt="RHEV-M Password:")
+def get_password(prompt="RHEV-M Password: ")
    ask(prompt) {|q| q.echo = "*"}
 end
 
@@ -95,8 +95,6 @@ end
 
 options[:pass] = get_password if options[:pass] == nil
 
-@vms = Array.new
-
 class VM
   attr_accessor :id, :name, :description, :host_uuid, :state, :port, :secure_port, :address
 
@@ -138,33 +136,53 @@ rhevm = RestClient::Resource.new(
     :ssl_version => "SSLv3",
     :verify_ssl => OpenSSL::SSL::VERIFY_NONE)
 
-# get the vms api and get the list of vms
-vms_data = XmlSimple.xml_in(rhevm["/api/vms"].get.body, { 'ForceArray' => false })
+def get_vms(vms_data)
+  # Iterate through the VM's and get all the 
+  # required information
+  @vms = Array.new	# Clear out array
+  vms_data['vm'].each do |vm|
+    # Making sure we only consider VM's that are in state up (so they do have a console to connect to)
+    # and that have the spice protocol enabled as the connection mode
+    if vm['status']['state'] == "up" && vm['display']['type'] == "spice"
+      @vms.push(VM.new(vm))
+    end
+  end
+  return @vms
+end
 
-# Iterate through the VM's and get all the 
-# required information
-vms_data['vm'].each do |vm|
-  # Making sure we only consider VM's that are in state up (so they do have a console to connect to)
-  # and that have the spice protocol enabled as the connection mode
-  if vm['status']['state'] == "up" && vm['display']['type'] == "spice"
-    @vms.push(VM.new(vm))
+while true do
+  @vms = Array.new	# Clear out array
+  # get the vms api and get the list of vms
+  vms_data = XmlSimple.xml_in(rhevm["/api/vms"].get.body, { 'ForceArray' => false })
+  @vms = get_vms(vms_data)
+  # Print the selection to the User
+  puts
+  puts "Running Virtual Machines found for #{options[:host]}:"
+  @vms.each_with_index do |v, index|
+    puts "#{index+1}. Name: #{v.name} Description: #{v.description} State: #{v.state}"
+  end
+  puts
+  puts "r. Refresh"
+  puts "q. Quit"
+  puts
+  
+  puts "Please select the VM you wish to open: "
+  
+  STDOUT.flush  
+  index = gets.chomp	# Hackish, just wanting to add quit
+  if index.to_s == "q"
+    exit 0
+  elsif index.to_s == "r"
+    next
+  end
+  index = index.to_i
+  if (1..@vms.size).member?(index)
+    break
+  else
+    puts "ERROR: Your selection #{index} is out of range."
   end
 end
-
-# Print the selection to the User
-@vms.each_with_index do |v, index|
-  puts "#{index+1}. Name: #{v.name} Description: #{v.description} State: #{v.state}"
-end
-
-puts "Please select the VM you wish to open: "
-
-STDOUT.flush  
-index = gets.chomp.to_i
-if index > @vms.size
-  puts "ERROR: Your selection #{index} is out of range."
-  exit 1
-end
-
+  
 vm = @vms[index-1]
 
 # let us no gather the host subject
