@@ -126,19 +126,25 @@ end
 
 
 # download the certificate file on the fly
-cert = Tempfile.new(options[:host] + ".crt")    
-Net::HTTP.start(options[:host]) do |http|
-  begin
-    http.request_get('/ca.crt') do |resp|
-      resp.read_body do |segment|
-        cert.write(segment)
+begin
+  cert = Tempfile.new(options[:host] + ".crt")    
+  Net::HTTP.start(options[:host]) do |http|
+    begin
+      http.request_get('/ca.crt') do |resp|
+        resp.read_body do |segment|
+          cert.write(segment)
+        end
       end
+    ensure
+      cert.close()
     end
-  ensure
-    cert.close()
   end
+  @cert = cert.path
+rescue => e
+  puts "There has been an error downloading the certificate file from #{options[:host]}"
+  e.message
+  exit 1
 end
-@cert = cert.path
 
 # Create a little helper object that we will use to 
 # make connections to the REST API
@@ -165,35 +171,40 @@ def get_vms(vms_data)
 end
 
 while true do
-  @vms = Array.new	# Clear out array
-  # get the vms api and get the list of vms
-  vms_data = XmlSimple.xml_in(rhevm["/api/vms"].get.body, { 'ForceArray' => false })
-  @vms = get_vms(vms_data)
-  # Print the selection to the User
-  puts
-  puts "Running Virtual Machines found for #{options[:host]}:"
-  @vms.each_with_index do |v, index|
-    puts "#{index+1}. Name: #{v.name} Description: #{v.description} State: #{v.state}"
-  end
-  puts
-  puts "r. Refresh"
-  puts "q. Quit"
-  puts
+  begin
+    @vms = Array.new	# Clear out array
+    # get the vms api and get the list of vms
+    vms_data = XmlSimple.xml_in(rhevm["/api/vms"].get.body, { 'ForceArray' => false })
+    @vms = get_vms(vms_data)
+    # Print the selection to the User
+    puts
+    puts "Running Virtual Machines found for #{options[:host]}:"
+    @vms.each_with_index do |v, index|
+      puts "#{index+1}. Name: #{v.name} Description: #{v.description} State: #{v.state}"
+    end
+    puts
+    puts "r. Refresh"
+    puts "q. Quit"
+    puts
   
-  puts "Please select the VM you wish to open: "
+    puts "Please select the VM you wish to open: "
   
-  STDOUT.flush  
-  index = gets.chomp	# Hackish, just wanting to add quit
-  if index.to_s == "q"
-    exit 0
-  elsif index.to_s == "r"
-    next
-  end
-  index = index.to_i
-  if (1..@vms.size).member?(index)
-    break
-  else
-    puts "ERROR: Your selection #{index} is out of range."
+    STDOUT.flush  
+    index = gets.chomp	# Hackish, just wanting to add quit
+    if index.to_s == "q"
+      exit 0
+    elsif index.to_s == "r"
+      next
+    end
+    index = index.to_i
+    if (1..@vms.size).member?(index)
+      break
+    else
+      puts "ERROR: Your selection #{index} is out of range."
+    end
+  rescue => e
+    puts "There was an error retrieving the Virtual Machines from #{options[:host]}: #{e.message}"
+    exit 1
   end
 end
   
