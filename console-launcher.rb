@@ -22,7 +22,11 @@
 #   Thomas Crowe <tcrowe@redhat.com>
 #   Vinny Valdez <vvaldez@redhat.com>
 #
-# May 14, 2013 - initial version
+# May 14, 2013 
+#   - initial version
+# 
+# May 22, 2013 
+#   - Made sure to strip http and https from the host definition
 
 require 'rubygems'
 require 'rest_client'
@@ -35,6 +39,11 @@ require 'highline/import' # Secure Password Prompting if a user does not provide
 # queries the User for a password
 def get_password(prompt="RHEV-M Password: ")
    ask(prompt) {|q| q.echo = "*"}
+end
+
+def strip_url(url)
+  # Remove any leading http or https from the host
+  url = url.split("://")[1] if url.include? "://"
 end
 
 options = {}
@@ -54,8 +63,7 @@ optparse = OptionParser.new do |opts|
 
   options[:host] = nil
   opts.on( '-h', '--host HOSTNAME', 'The Hostname of your RHEV-M Installation') do |host|
-    host = host.split("://")[1] if host.start_with?("http") # Making sure we only use the FQDN 
-    options[:host] = host
+    options[:host] = strip_url(host)
   end
 
   options[:user] = "admin@internal"
@@ -91,15 +99,6 @@ end
 # any options found there, as well as any parameters for
 # the options. What's left is the list of files to resize.
 optparse.parse!
-
-def strip_url(url)
-  # Remove any leading http or https from the host
-  url.sub!(/https\:\/\//, '') if url.include? "https://"
-  url.sub!(/http\:\/\//, '')  if url.include? "http://"
-  return url
-end
-
-options[:host] = strip_url(options[:host])
 
 if options[:host] == nil
   puts "ERROR: You have to configure RHEV-M Hostname to connect to"
