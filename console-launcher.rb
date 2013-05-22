@@ -47,34 +47,34 @@ def strip_url(url)
   return url
 end
 
-options = {}
+@options = {}
 
 optparse = OptionParser.new do |opts|
   opts.banner = "Usage: #{$PROGRAM_NAME} [options]"
 
-  options[:print] = false
+  @options[:print] = false
   opts.on( '--print', 'Print the command to launch the Remote Viewer instead of executing it') do |directory|
-    options[:print] = true
+    @options[:print] = true
   end
 
-  options[:dryrun] = false
+  @options[:dryrun] = false
   opts.on( '-d', '--dry-run', 'Do not execute the Remote Viewer Application') do |dryrun|
-    options[:dryrun] = true
+    @options[:dryrun] = true
   end
 
-  options[:host] = nil
+  @options[:host] = nil
   opts.on( '-h', '--host HOSTNAME', 'The Hostname of your RHEV-M Installation') do |host|
-    options[:host] = strip_url(host)
+    @options[:host] = strip_url(host)
   end
 
-  options[:user] = "admin@internal"
+  @options[:user] = "admin@internal"
   opts.on( '-u', '--username USERNAME', 'The Username used to establish the connection to --host (defaults to admin@internal)') do |u|
-    options[:user] = u
+    @options[:user] = u
   end
 
-  options[:pass] = nil
+  @options[:pass] = nil
   opts.on( '-p', '--password PASSWORD', 'The Password used to establish the connection to --host') do |pass|
-    options[:pass] = pass
+    @options[:pass] = pass
   end
 
   # This displays the help screen, all programs are
@@ -97,17 +97,17 @@ end
 # Parse the command-line. Remember there are two forms
 # of the parse method. The 'parse' method simply parses
 # ARGV, while the 'parse!' method parses ARGV and removes
-# any options found there, as well as any parameters for
-# the options. What's left is the list of files to resize.
+# any @options found there, as well as any parameters for
+# the @options. What's left is the list of files to resize.
 optparse.parse!
 
-if options[:host] == nil
+if @options[:host] == nil
   puts "ERROR: You have to configure RHEV-M Hostname to connect to"
   puts optparse.help
   exit 1
 end
 
-options[:pass] = get_password if options[:pass] == nil
+@options[:pass] = get_password if @options[:pass] == nil
 
 class VM
   attr_accessor :id, :name, :description, :host_uuid, :state, :port, :secure_port, :address
@@ -127,8 +127,8 @@ end
 
 # download the certificate file on the fly
 begin
-  cert = Tempfile.new(options[:host] + ".crt")    
-  Net::HTTP.start(options[:host]) do |http|
+  cert = Tempfile.new(@options[:host] + ".crt")    
+  Net::HTTP.start(@options[:host]) do |http|
     begin
       http.request_get('/ca.crt') do |resp|
         resp.read_body do |segment|
@@ -141,17 +141,17 @@ begin
   end
   @cert = cert.path
 rescue => e
-  puts "There has been an error downloading the certificate file from #{options[:host]}"
+  puts "There has been an error downloading the certificate file from #{@options[:host]}"
   e.message
   exit 1
 end
 
 # Create a little helper object that we will use to 
 # make connections to the REST API
-rhevm = RestClient::Resource.new(
-    "https://" + options[:host], 
-    :user => options[:user], 
-    :password => options[:pass],
+@rhevm = RestClient::Resource.new(
+    "https://" + @options[:host], 
+    :user => @options[:user], 
+    :password => @options[:pass],
     :ssl_ca_cert => @cert,
     :ssl_version => "SSLv3",
     :verify_ssl => OpenSSL::SSL::VERIFY_NONE)
@@ -170,15 +170,58 @@ def get_vms(vms_data)
   return @vms
 end
 
+def launch_viewer(index)
+  vm = @vms[index-1]
+
+  # let us no gather the host subject
+  hosts_data = XmlSimple.xml_in(@rhevm["/api/hosts/"+vm.host_uuid].get.body, { 'ForceArray' => false })
+  host_subject = hosts_data['certificate']['subject']
+
+  ticket_data = XmlSimple.xml_in(@rhevm["/api/vms/" + vm.id + "/ticket"].post("<action><ticket><expiry>300</expiry></ticket></action>", :content_type => 'application/xml').body, { 'ForceArray' => false })
+  password = ticket_data['ticket']['value']
+
+  # Creating the .vv File for the connection
+  # download the certificate file on the fly
+  vv = Tempfile.new("#{vm.name}.vv")    
+  begin
+    vv.puts("[virt-viewer]")
+    vv.puts("type=spice")
+    vv.puts("host=#{vm.address}")
+    vv.puts("port=#{vm.port}")
+    vv.puts("password=#{password}")
+    vv.puts("tls-port=#{vm.secure_port}")
+    vv.puts("fullscreen=0")
+    vv.puts("title=vm:#{vm.name} - %d - Press SHIFT+F12 to Release Cursor")
+    vv.puts("enable-smartcard=0")
+    vv.puts("enable-usb-autoshare=1")
+    vv.puts("usb-filter=-1,-1,-1,-1,0")
+    vv.puts("host-subject=#{host_subject}")
+    vv.puts("toggle-fullscreen=shift+f11")
+    vv.puts("release-cursor=shift+f12")
+  ensure 
+    vv.close()
+  end
+
+  # Now that we have all the information we can print the cmd line
+  puts "Console to VM: #{vm.name} state: #{vm.state} is started"
+  command = "/Applications/RemoteViewer.app/Contents/MacOS/RemoteViewer --spice-ca-file #{@cert} #{vv.path}"
+  puts command if @options[:print]
+  unless @options[:dryrun]
+    (pid = fork) ? Process.detach(pid) : exec(command)   
+  end
+  puts "Reloading Virtual Machines Selection Menu ..."
+  sleep(5)
+end
+
 while true do
   begin
     @vms = Array.new	# Clear out array
     # get the vms api and get the list of vms
-    vms_data = XmlSimple.xml_in(rhevm["/api/vms"].get.body, { 'ForceArray' => false })
+    vms_data = XmlSimple.xml_in(@rhevm["/api/vms"].get.body, { 'ForceArray' => false })
     @vms = get_vms(vms_data)
     # Print the selection to the User
     puts
-    puts "Running Virtual Machines found for #{options[:host]}:"
+    puts "Running Virtual Machines found for #{@options[:host]}:"
     @vms.each_with_index do |v, index|
       puts "#{index+1}. Name: #{v.name} Description: #{v.description} State: #{v.state}"
     end
@@ -198,53 +241,17 @@ while true do
     end
     index = index.to_i
     if (1..@vms.size).member?(index)
-      break
+      launch_viewer(index)
     else
       puts "ERROR: Your selection #{index} is out of range."
     end
   rescue => e
-    puts "There was an error retrieving the Virtual Machines from #{options[:host]}: #{e.message}"
+    puts "There was an error retrieving the Virtual Machines from #{@options[:host]}: #{e.message}"
+    puts e.backtrace
     exit 1
   end
 end
   
-vm = @vms[index-1]
-
-# let us no gather the host subject
-hosts_data = XmlSimple.xml_in(rhevm["/api/hosts/"+vm.host_uuid].get.body, { 'ForceArray' => false })
-host_subject = hosts_data['certificate']['subject']
-
-ticket_data = XmlSimple.xml_in(rhevm["/api/vms/" + vm.id + "/ticket"].post("<action><ticket><expiry>300</expiry></ticket></action>", :content_type => 'application/xml').body, { 'ForceArray' => false })
-password = ticket_data['ticket']['value']
-
-# Creating the .vv File for the connection
-# download the certificate file on the fly
-vv = Tempfile.new("#{vm.name}.vv")    
-begin
-  vv.puts("[virt-viewer]")
-  vv.puts("type=spice")
-  vv.puts("host=#{vm.address}")
-  vv.puts("port=#{vm.port}")
-  vv.puts("password=#{password}")
-  vv.puts("tls-port=#{vm.secure_port}")
-  vv.puts("fullscreen=0")
-  vv.puts("title=vm:#{vm.name} - %d - Press SHIFT+F12 to Release Cursor")
-  vv.puts("enable-smartcard=0")
-  vv.puts("enable-usb-autoshare=1")
-  vv.puts("usb-filter=-1,-1,-1,-1,0")
-  vv.puts("host-subject=#{host_subject}")
-  vv.puts("toggle-fullscreen=shift+f11")
-  vv.puts("release-cursor=shift+f12")
-ensure 
-  vv.close()
-end
-
-# Now that we have all the information we can print the cmd line
-puts "VM: #{vm.name} state: #{vm.state} Password: #{password}"
-command = "/Applications/RemoteViewer.app/Contents/MacOS/RemoteViewer --spice-ca-file #{@cert} #{vv.path}"
-puts command if options[:print]
-%x{#{command}} unless options[:dryrun]
-
 exit 0
 
 
