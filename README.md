@@ -2,7 +2,15 @@
 https://github.com/juhoffma/rhev-console-launcher
 
 ## Preparation
-In addition to the console-launcher.rb script, a few gems are required. Please install them with the following commands.
+In addition to the console-launcher.rb script, a few gems are required. 
+
+In case you do not have [bundler](http://gembundler.com) installed you have to install it first
+
+```
+  gem install bundler
+```
+
+Then you can simply run the following command...
 
 ```
   bundle install

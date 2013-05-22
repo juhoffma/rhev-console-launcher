@@ -44,6 +44,7 @@ end
 def strip_url(url)
   # Remove any leading http or https from the host
   url = url.split("://")[1] if url.include? "://"
+  return url
 end
 
 options = {}
