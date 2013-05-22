@@ -54,6 +54,7 @@ optparse = OptionParser.new do |opts|
 
   options[:host] = nil
   opts.on( '-h', '--host HOSTNAME', 'The Hostname of your RHEV-M Installation') do |host|
+    host = host.split("://")[1] if host.start_with?("http") # Making sure we only use the FQDN 
     options[:host] = host
   end
 
