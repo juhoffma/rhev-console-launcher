@@ -1,4 +1,5 @@
 # rhev-console-launcher
+https://github.com/juhoffma/rhev-console-launcher
 
 ## Installation
 In addition to the console-launcher.rb script, a few gems are required. Please install them with the following commands.

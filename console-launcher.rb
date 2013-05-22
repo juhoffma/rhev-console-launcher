@@ -17,8 +17,12 @@
 # This script calls the RHEV-M Virt API and creates callable cmd-lines
 # to the remote viewer.
 # 
-# written by Juergen Hoffmann <buddy@redhat.com>
-# May 14th, 2013 
+# written by:
+#   Juergen Hoffmann <buddy@redhat.com>
+#   Thomas Crowe <tcrowe@redhat.com>
+#   Vinny Valdez <vvaldez@redhat.com>
+#
+# May 14, 2013 - initial version
 
 require 'rubygems'
 require 'rest_client'
@@ -39,7 +43,7 @@ optparse = OptionParser.new do |opts|
   opts.banner = "Usage: #{$PROGRAM_NAME} [options]"
 
   options[:print] = false
-  opts.on( '-p', '--print', 'Print the command to launch the Remote Viewer instead of executing it') do |directory|
+  opts.on( '--print', 'Print the command to launch the Remote Viewer instead of executing it') do |directory|
     options[:print] = true
   end
 
@@ -86,6 +90,15 @@ end
 # any options found there, as well as any parameters for
 # the options. What's left is the list of files to resize.
 optparse.parse!
+
+def strip_url(url)
+  # Remove any leading http or https from the host
+  url.sub!(/https\:\/\//, '') if url.include? "https://"
+  url.sub!(/http\:\/\//, '')  if url.include? "http://"
+  return url
+end
+
+options[:host] = strip_url(options[:host])
 
 if options[:host] == nil
   puts "ERROR: You have to configure RHEV-M Hostname to connect to"
