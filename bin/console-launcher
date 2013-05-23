@@ -207,7 +207,16 @@ def launch_viewer(index)
   command = "/Applications/RemoteViewer.app/Contents/MacOS/RemoteViewer --spice-ca-file #{@cert} #{vv.path}"
   puts command if @options[:print]
   unless @options[:dryrun]
-    (pid = fork) ? Process.detach(pid) : exec(command)   
+    pid = Process.fork
+    if pid.nil? then
+      # In child
+      $stdout.reopen(Tempfile.new("RV-stdout").path, 'w')
+      $stderr.reopen(Tempfile.new("RV-stderr").path, 'w')
+      exec(command)
+    else
+      # In parent
+      Process.detach(pid)
+    end   
   end
   puts "Reloading Virtual Machines Selection Menu ..."
   sleep(5)

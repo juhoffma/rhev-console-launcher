@@ -16,6 +16,14 @@ Then you can simply run the following command...
   bundle install
 ```
 
+alternatively you can go ahead and run
+
+```
+gem install console-launcher
+```
+
+and all gems we depend upon will be installed immediately
+
 On MacOSX This script requires [RemoteViewer](http://people.freedesktop.org/~teuf/spice-gtk-osx/dmg/0.3.1/) to be installed. This script looks for it in /Applications/RemoteViewer.app so make sure to install it to that same location.
 
 ## Running the script
