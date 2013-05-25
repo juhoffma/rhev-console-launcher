@@ -18,3 +18,7 @@ _yardoc
 doc/
 de
 Gemfile.lock
+.idea
+rhev-console-launcher.iml
+man/console-launcher.1
+man/console-launcher.1.html
