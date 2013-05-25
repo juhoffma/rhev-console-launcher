@@ -1,0 +1,47 @@
+console-launcher(1) -- Launch consoles for VM's hosted on your RHEV Manager
+===========================================================================
+
+## SYNOPSIS
+
+`console-launcher` --host <rhevm_hostname> --user <rhevm_username><br>
+
+## DESCRIPTION
+
+  **console-launcher** is a simple command-line tool for launching console sessions
+  to your Virtual Machines running in your RHEV Environment. It utilizes the RHEV-M REST
+  API to query for the list of VM's running.
+
+  It will only display Virtual Machines that have the **SPICE** Protocol selected and that are
+  actually in state **up**. After you select a Virtual Machine to connect to it automatically creates
+  a Session Ticket and stores it inside a .vv File.
+
+  All the files necessary to start the console session are created fully automatically for you. The
+  Ticket that is generated is valid for 30 seconds. So although the files are stored inside of the temp
+  directory of the system, the credentials in there should not be valid after the script is ended.
+
+  The script creates a configuration file **USER_HOME/.console-launcher.rc.yaml** which can be adapted
+  to your environment, to speed up your workflow to start console sessions.
+
+## OPTIONS
+
+  * `--print`:
+    Print the command that is called to launch the Console Session
+
+  * `-d`, `--dry-run`:
+    Do not execute the command to launch the Console Session. This can be used for testing purposes.
+
+  * `-h`, `--host HOSTNAME`:
+    The Hostname of your RHEV-M Server. This is the FQDN or IP Address not the URL.
+
+  * `-u`, `--username USERNAME`:
+    The Username used to establish the connection to --host (defaults to admin@internal)
+
+  * `-p`, `--password PASSWORD`:
+    The Password used to establish the connection to --host
+
+## EXAMPLES
+
+  Connect to your RHEV Manager running on rhev.example.com. The username is the default admin@internal.
+   The password will be asked from the user.
+
+    $ console-launcher --host rhev.example.com
