@@ -6,7 +6,7 @@ require 'date'
 Gem::Specification.new do |s|
   s.name        = 'console-launcher'
   s.version     = ConsoleLauncher::VERSION
-  s.date        = Time.new.to_date
+  s.date        = "2013-05-28"
   s.summary     = "RHEV-M Console Launcher"
   s.description = "This gem provides the ability to launch console sessions on Mac"
   s.authors     = ["Juergen Hoffmann", "Vinny Valdez", "Thomas Crowe"]
@@ -22,6 +22,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'rest-client', '~>1.6.7'
   s.add_dependency 'xml-simple', '~>1.1.2'
   s.add_dependency 'highline', '~>1.6.19'
+  s.add_dependency 'sfl', '~>2.2'
   s.add_development_dependency("rake")
   s.add_development_dependency("rdoc")
   s.requirements << 'RemoteViewer - get it from http://people.freedesktop.org/~teuf/spice-gtk-osx/dmg/0.3.1/'

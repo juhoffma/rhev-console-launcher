@@ -25,6 +25,7 @@ require 'tmpdir' # required to download the certificate files on they fly
 require 'net/http'
 require 'highline/import' # Secure Password Prompting if a user does not provide it when the script is called
 require 'rhev-manager/virtual-machine'
+require 'rbconfig'
 
 # This class provides utility methods to encapsulates RESTful access to the RHEV Manager.
 # Since the returned response is in XML this class transforms the XML Response into Ruby Objects.
@@ -132,13 +133,58 @@ class RhevManager
     # Now that we have all the information we can print the cmd line
     puts "Console to VM: #{vm.name} state: #{vm.state} is started"
 
-    command = "/Applications/RemoteViewer.app/Contents/MacOS/RemoteViewer --spice-ca-file #{@cert} #{@vv.path}"
+    command = [
+        Helper::OPTIONS[:viewer],
+        "--spice-ca-file",
+        @cert,
+        @vv.path,
+        {
+            :out => Tempfile.new(["RemoteViewer",".out"]).path,
+            :err => Tempfile.new(["RemoteViewer",".err"]).path
+        }
+    ]
   end
 
 
 end
 
 module Helper
+
+  CONFIG_FILE = File.join(ENV['HOME'], '.console-launcher.rc.yaml')
+
+  OPTIONS = {
+      :print => false,
+      :dryrun => false,
+      :host => nil,
+      :user => "admin@internal",
+      :pass => nil
+  }
+
+  OPTIONS[:viewer] = case RbConfig::CONFIG['host_os']
+                       when /mac|darwin/ then
+                         "/Applications/RemoteViewer.app/Contents/MacOS/RemoteViewer"
+                       when /linux|bsd|cygwin/ then
+                         "/usr/bin/remote-viewer"
+                       when /mswin|mingw/ then
+                         "C:/Program Files/VirtViewer/bin/remote-viewer.exe"
+                       # when /solaris|sunos/     then :Linux # needs testing..
+                       else
+                         raise "Your OS(#{ RbConfig::CONFIG['host_os'] }) is not yet supported"
+                     end
+
+  def load_options
+    if File.exists? CONFIG_FILE
+      config_options = YAML.load_file(CONFIG_FILE)
+      OPTIONS.merge!(config_options)
+
+      unless config_options.has_key?(:viewer)
+        File.open(CONFIG_FILE, 'w') { |file| YAML::dump(OPTIONS, file) }
+      end
+    else
+      File.open(CONFIG_FILE, 'w') { |file| YAML::dump(OPTIONS, file) }
+      STDERR.puts "Initialized configuration file in #{CONFIG_FILE}"
+    end
+  end
 
   # queries the User for a password
   def get_password(prompt="RHEV-M Password: ")
@@ -151,7 +197,5 @@ module Helper
     return url
   end
 
-  def initialize
 
-  end
 end

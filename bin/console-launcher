@@ -33,47 +33,34 @@ require 'console-launcher'
 require 'console-launcher_version'
 require 'optparse'
 require 'yaml'
+require 'sfl'
+
 include Helper
 
-options = {
-    print: false,
-    dryrun: false,
-    host: nil,
-    user: "admin@internal",
-    pass: nil
-}
-
-CONFIG_FILE = File.join(ENV['HOME'], '.config-launcher.rc.yaml')
-if File.exists? CONFIG_FILE
-  config_options = YAML.load_file(CONFIG_FILE)
-  options.merge!(config_options)
-else
-  File.open(CONFIG_FILE, 'w') { |file| YAML::dump(options, file) }
-  STDERR.puts "Initialized configuration file in #{CONFIG_FILE}"
-end
+Helper.load_options
 
 optparse = OptionParser.new do |opts|
   opts.banner = "Usage: #{$PROGRAM_NAME} [options]"
 
 
   opts.on('--print', 'Print the command that is called to launch the Console Session') do
-    options[:print] = true
+    Helper::OPTIONS[:print] = true
   end
 
   opts.on('-d', '--dry-run', 'Do not execute the Remote Viewer Application') do
-    options[:dryrun] = true
+    Helper::OPTIONS[:dryrun] = true
   end
 
   opts.on('-h', '--host HOSTNAME', 'The Hostname of your RHEV-M Installation') do |host|
-    options[:host] = strip_url(host)
+    Helper::OPTIONS[:host] = strip_url(host)
   end
 
   opts.on('-u', '--username USERNAME', 'The Username used to establish the connection to --host (defaults to admin@internal)') do |u|
-    options[:user] = u
+    Helper::OPTIONS[:user] = u
   end
 
   opts.on('-p', '--password PASSWORD', 'The Password used to establish the connection to --host') do |pass|
-    options[:pass] = pass
+    Helper::OPTIONS[:pass] = pass
   end
 
   # This displays the help screen, all programs are
@@ -102,15 +89,15 @@ end
 # the @options. What's left is the list of files to resize.
 optparse.parse!
 
-if options[:host] == nil
+if Helper::OPTIONS[:host] == nil
   puts "ERROR: You have to configure RHEV-M Hostname to connect to"
   puts optparse.help
   exit 1
 end
 
-options[:pass] = get_password() if options[:pass] == nil
+Helper::OPTIONS[:pass] = get_password() if Helper::OPTIONS[:pass] == nil
 
-rhevm = RhevManager.new(options[:host], options[:user], options[:pass])
+rhevm = RhevManager.new(Helper::OPTIONS[:host], Helper::OPTIONS[:user], Helper::OPTIONS[:pass])
 
 while true do
   begin
@@ -118,7 +105,7 @@ while true do
 
     # Print the selection to the User
     puts
-    puts "Running Virtual Machines found for #{options[:host]}:"
+    puts "Running Virtual Machines found for #{Helper::OPTIONS[:host]}:"
     vms.each_with_index do |v, index|
       puts "#{index+1}. Name: #{v.name} Description: #{v.description} State: #{v.state}"
     end
@@ -140,20 +127,9 @@ while true do
 
     if (1..vms.size).member?(index)
       command = rhevm.launch_viewer(index)
-      puts command if options[:print]
-      unless options[:dryrun]
-        pid = Process.fork
-
-        if pid.nil?
-          # In child
-          $stdout.reopen(Tempfile.new("RV-stdout").path, 'w')
-          $stderr.reopen(Tempfile.new("RV-stderr").path, 'w')
-          exec(command)
-        else
-          # In parent
-          Process.detach(pid)
-        end
-
+      puts command.join(" ") if Helper::OPTIONS[:print]
+      unless Helper::OPTIONS[:dryrun]
+        spawn(*command)
       end
 
       puts "Reloading Virtual Machines Selection Menu ..."
@@ -162,7 +138,7 @@ while true do
       puts "ERROR: Your selection #{index} is out of range."
     end
   rescue => e
-    puts "There was an error retrieving the Virtual Machines from #{options[:host]}: #{e.message}"
+    puts "There was an error retrieving the Virtual Machines from #{Helper::OPTIONS[:host]}: #{e.message}"
     puts e.backtrace
     exit 1
   end
