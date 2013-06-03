@@ -72,8 +72,8 @@ optparse = OptionParser.new do |opts|
     puts ""
     puts "This script requires a working SPICE Client for your platform. You can get it from"
     puts "   - MacOSX:    http://people.freedesktop.org/~teuf/spice-gtk-osx/dmg/0.3.1/"
-    puts "   - Linux:     TBD"
-    puts "   - Windows:   TBD"
+    puts "   - Linux:     http://virt-manager.et.redhat.com/download/sources/virt-viewer/virt-viewer-0.5.6.tar.gz"
+    puts "   - Windows:   http://virt-manager.org/download/sources/virt-viewer/virt-viewer-x64-0.5.6.msi"
     puts ""
     puts "Version: " + ConsoleLauncher::VERSION
     puts ""

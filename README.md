@@ -1,8 +1,17 @@
 # rhev-console-launcher
 https://github.com/juhoffma/rhev-console-launcher
 
-## Preparation
-In addition to the console-launcher.rb script, a few gems are required. 
+To run rhev console launcher you can simply install it as a gem
+```
+gem install console-launcher
+```
+and all gems we depend upon will be installed immediately
+
+Alternatively you can go ahead and install it manually...
+
+## Manual Installation
+
+In addition to the console-launcher script, a few gems are required. 
 
 In case you do not have [bundler](http://gembundler.com) installed you have to install it first
 
@@ -16,30 +25,23 @@ Then you can simply run the following command...
   bundle install
 ```
 
-alternatively you can go ahead and run
-
-```
-gem install console-launcher
-```
-
-and all gems we depend upon will be installed immediately
-
-On MacOSX This script requires [RemoteViewer](http://people.freedesktop.org/~teuf/spice-gtk-osx/dmg/0.3.1/) to be installed. This script looks for it in /Applications/RemoteViewer.app so make sure to install it to that same location.
+## Introduction
+This script requires [virt-viewer](http://spice-space.org/download.html) to be installed. On Mac OSX you can get the most recent version of the Application from http://people.freedesktop.org/~teuf/spice-gtk-osx/dmg/0.3.1/
 
 ## Running the script
 The script provides a self explanatory help message.
 ```
-  $ ./console-launcher.rb --help
+  $ ./console-launcher --help
 
   This script connects to a RHEV-M Instance and lists all running VMs. You can choose which VM you want to
   connect to via SPICE Protocol.
 
   This script requires a working SPICE Client for your platform. You can get it from
      - MacOSX:    http://people.freedesktop.org/~teuf/spice-gtk-osx/dmg/0.3.1/
-     - Linux:     TBD
-     - Windows:   TBD
+     - Linux:     http://virt-manager.et.redhat.com/download/sources/virt-viewer/virt-viewer-0.5.6.tar.gz
+     - Windows:   http://virt-manager.org/download/sources/virt-viewer/virt-viewer-x64-0.5.6.msi
 
-  Usage: ./console-launcher.rb [options]
+  Usage: ./console-launcher [options]
           --print                      Print the command to launch the Remote Viewer instead of executing it
       -d, --dry-run                    Do not execute the Remote Viewer Application
       -h, --host HOSTNAME              The Hostname of your RHEV-M Installation
@@ -48,4 +50,37 @@ The script provides a self explanatory help message.
       -p, --password PASSWORD          The Password used to establish the connection to --host
           --help                       Display this Help Message
 ```
-                                       
+
+## Configuration
+This script automatically creates a configuration file `~/.console-launcher.rc.yaml`. This allows you to setup your environment. The configuration file follows the [YAML](http://www.yaml.org) standards and is read in as a YAML file.
+```
+---
+:print: false
+:dryrun: false
+:host: rhevm.example.com
+:user: admin@internal
+:pass: secret:password!
+:viewer: /Applications/RemoteViewer.app/Contents/MacOS/RemoteViewer
+```            
+
+## Installation Instructions on Fedora 18
+
+thanks to Benjamin Kruell for trying that out.
+
+1.) download `virt-viewer-0.5.6` or newer package from:
+ftp://rpmfind.net/linux/fedora/linux/development/rawhide/x86_64/os/Packages/v/virt-viewer-0.5.6-1.fc20.i686.rpm
+
+2.) download `libgovirt-0.0.3-2.fc20.i686.rpm` or newer
+ftp://rpmfind.net/linux/fedora/linux/development/rawhide/x86_64/os/Packages/l/libgovirt-0.0.3-2.fc20.i686.rpm
+
+3.) `yum -y install intltool`
+
+4.) go to the location containing the downloaded rpm and install them:
+`yum localinstall libgovirt-0.0.3-2.fc20.i686.rpm`
+`yum localinstall virt-viewer-0.5.6-1.fc20.i686.rpm`
+
+5.) `yum -y install spice-xpi`
+
+* console-launcher will not work without virt-viewer 0.5.6 or newer
+* because libgovirt 64bit package does not ship the libgovirt(x64) flag which is required by the virt-viewer 64-bit package, we currently have to use the 32-bit packages until a newer version of the package.
+
