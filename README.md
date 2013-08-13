@@ -84,3 +84,23 @@ ftp://rpmfind.net/linux/fedora/linux/development/rawhide/x86_64/os/Packages/l/li
 * console-launcher will not work without virt-viewer 0.5.6 or newer
 * because libgovirt 64bit package does not ship the libgovirt(x64) flag which is required by the virt-viewer 64-bit package, we currently have to use the 32-bit packages until a newer version of the package.
 
+## Problem Solving
+If you still run into issues with SSL Certificates like:
+```
+console-launcher --host student1-aio.juhoffma.gsso.redhat.com
+/Users/buddy/.rvm/gems/ruby-1.9.3-p362@rails3tutorial2ndEd/gems/rest-client-1.6.7/lib/restclient/abstract_response.rb:48:in `return!'
+/Users/buddy/.rvm/gems/ruby-1.9.3-p362@rails3tutorial2ndEd/gems/rest-client-1.6.7/lib/restclient/request.rb:230:in `process_result'
+/Users/buddy/.rvm/gems/ruby-1.9.3-p362@rails3tutorial2ndEd/gems/rest-client-1.6.7/lib/restclient/request.rb:178:in `block in transmit'
+/Users/buddy/.rvm/rubies/ruby-1.9.3-p362/lib/ruby/1.9.1/net/http.rb:745:in `start'
+/Users/buddy/.rvm/gems/ruby-1.9.3-p362@rails3tutorial2ndEd/gems/rest-client-1.6.7/lib/restclient/request.rb:172:in `transmit'
+/Users/buddy/.rvm/gems/ruby-1.9.3-p362@rails3tutorial2ndEd/gems/rest-client-1.6.7/lib/restclient/request.rb:64:in `execute'
+/Users/buddy/.rvm/gems/ruby-1.9.3-p362@rails3tutorial2ndEd/gems/rest-client-1.6.7/lib/restclient/request.rb:33:in `execute'
+/Users/buddy/.rvm/gems/ruby-1.9.3-p362@rails3tutorial2ndEd/gems/rest-client-1.6.7/lib/restclient/resource.rb:51:in `get'
+/Users/buddy/.rvm/gems/ruby-1.9.3-p362@rails3tutorial2ndEd/gems/console-launcher-0.0.11/lib/console-launcher.rb:81:in `get_vms'
+/Users/buddy/.rvm/gems/ruby-1.9.3-p362@rails3tutorial2ndEd/gems/console-launcher-0.0.11/bin/console-launcher:104:in `<top (required)>'
+/Users/buddy/.rvm/gems/ruby-1.9.3-p362@rails3tutorial2ndEd/bin/console-launcher:23:in `load'
+/Users/buddy/.rvm/gems/ruby-1.9.3-p362@rails3tutorial2ndEd/bin/console-launcher:23:in `<main>'
+/Users/buddy/.rvm/gems/ruby-1.9.3-p362@rails3tutorial2ndEd/bin/ruby_noexec_wrapper:14:in `eval'
+/Users/buddy/.rvm/gems/ruby-1.9.3-p362@rails3tutorial2ndEd/bin/ruby_noexec_wrapper:14:in `<main>'
+```
+This link provides some very useful information: http://railsapps.github.io/openssl-certificate-verify-failed.html
