@@ -78,7 +78,10 @@ class RhevManager
     @vms = Array.new # Clear out array
 
     # get the vms api and get the list of vms
-    vms_data = XmlSimple.xml_in(@rhevm["/api/vms"].get.body, {'ForceArray' => true})
+    vms_data = XmlSimple.xml_in(@rhevm["/api/vms"].get.body, {'ForceArray' => false})
+
+    # Force the value of the 'vm' key to be an array when only one vm is returned and is a Hash.
+    vms_data['vm'] = [vms_data['vm']] if vms_data['vm'].class == Hash
 
     # Iterate through the VM's and get all the
     # required information
