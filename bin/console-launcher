@@ -106,8 +106,10 @@ while true do
     # Print the selection to the User
     puts
     puts "Running Virtual Machines found for #{Helper::OPTIONS[:host]}:"
+    printf "%-5s|%-25s|%-40s|%-10s\n", 'Index', 'Name', 'Description', 'State'
+    puts Array.new(80, "=").join
     vms.each_with_index do |v, index|
-      puts "#{index+1}. Name: #{v.name} Description: #{v.description} State: #{v.state}"
+      printf "%-5s|%-25s|%-40s|%-10s\n", index+1, v.name, v.description, v.state
     end
     puts
     puts "r. Refresh"
